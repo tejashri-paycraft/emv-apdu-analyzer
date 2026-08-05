@@ -37,7 +37,7 @@ class LogInputPanel extends StatelessWidget {
           ),
         ],
       ),
-      height: 320,
+      height: 290,
       child: Row(
         children: [
           //------------------------------------------

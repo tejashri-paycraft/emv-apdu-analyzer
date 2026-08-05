@@ -10,7 +10,6 @@ import 'widgets/command_details_panel.dart';
 import 'widgets/left_panel.dart';
 import 'widgets/log_input_panel.dart';
 import 'widgets/selected_command_header.dart';
-import 'widgets/status_panel.dart';
 import 'widgets/tag_inspector_panel.dart';
 import 'widgets/tlv_tree_panel.dart';
 
@@ -190,12 +189,12 @@ class _HomeScreenState extends State<HomeScreen> {
                                       //--------------------------------------------------
                                       // Status
                                       //--------------------------------------------------
-                                      Expanded(
-                                        flex: 2,
-                                        child: StatusPanel(log: selectedLog!),
-                                      ),
-
-                                      const SizedBox(height: 16),
+                                      // Expanded(
+                                      //   flex: 2,
+                                      //   child: StatusPanel(log: selectedLog!),
+                                      // ),
+                                      //
+                                      // const SizedBox(height: 16),
 
                                       //--------------------------------------------------
                                       // Tag Inspector

@@ -1,37 +1,38 @@
 import 'package:flutter/material.dart';
 
 import '../models/apdu_log.dart';
+import '../models/dol_field.dart';
 import '../theme/app_theme.dart';
 import 'common_panel.dart';
 
 class CommandDetailsPanel extends StatelessWidget {
   final ApduLog log;
 
-  const CommandDetailsPanel({super.key, required this.log});
+  /// Parsed GPO/CDOL fields
+  final List<DolField> parsedFields;
+
+  /// GPO (PDOL), GENERATE AC1 (CDOL1) etc.
+  final String parsedTitle;
+
+  const CommandDetailsPanel({
+    super.key,
+    required this.log,
+    this.parsedFields = const [],
+    this.parsedTitle = "",
+  });
 
   @override
   Widget build(BuildContext context) {
     return CommonPanel(
       title: "Command Details",
-      // trailing: IconButton(
-      //   tooltip: "Copy Command",
-      //   icon: const Icon(Icons.copy, size: 20),
-      //   onPressed: () {
-      //     Clipboard.setData(ClipboardData(text: log.command));
-      //
-      //     ScaffoldMessenger.of(
-      //       context,
-      //     ).showSnackBar(const SnackBar(content: Text("Command copied")));
-      //   },
-      // ),
-      height: 290,
+      height: 560,
       child: SingleChildScrollView(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            //------------------------------------
+            //----------------------------------------------------
             // CLA INS P1 P2 LC
-            //------------------------------------
+            //----------------------------------------------------
             Wrap(
               spacing: 14,
               runSpacing: 14,
@@ -41,18 +42,17 @@ class CommandDetailsPanel extends StatelessWidget {
                 _chip("P1", log.p1),
                 _chip("P2", log.p2),
                 _chip("Lc", log.lc),
-                _chip("Data", log.data),
               ],
             ),
 
-            const SizedBox(height: 24),
+            const SizedBox(height: 20),
 
-            const Text(
-              "Data Description",
-              style: TextStyle(fontWeight: FontWeight.bold),
-            ),
+            //----------------------------------------------------
+            // Raw Data
+            //----------------------------------------------------
+            const Text("Data", style: TextStyle(fontWeight: FontWeight.bold)),
 
-            const SizedBox(height: 10),
+            const SizedBox(height: 8),
 
             Container(
               width: double.infinity,
@@ -63,14 +63,112 @@ class CommandDetailsPanel extends StatelessWidget {
                 border: Border.all(color: AppTheme.border),
               ),
               child: SelectableText(
-                _ascii(log.data),
-                style: const TextStyle(
-                  fontFamily: "monospace",
-                  fontSize: 14,
-                  height: 1.6,
-                ),
+                _formatHex(log.data),
+                style: const TextStyle(fontFamily: "monospace", height: 1.6),
               ),
             ),
+
+            //----------------------------------------------------
+            // Parsed DOL
+            //----------------------------------------------------
+            if (parsedFields.isNotEmpty) ...[
+              const SizedBox(height: 24),
+
+              Text(
+                parsedTitle.isEmpty ? "Parsed Data" : parsedTitle,
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 15,
+                ),
+              ),
+
+              const SizedBox(height: 10),
+
+              Container(
+                decoration: BoxDecoration(
+                  color: const Color(0xff111827),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: AppTheme.border),
+                ),
+                child: Column(
+                  children: [
+                    //--------------------------------------------------
+                    // Header
+                    //--------------------------------------------------
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 12,
+                      ),
+                      decoration: const BoxDecoration(
+                        border: Border(
+                          bottom: BorderSide(color: AppTheme.border),
+                        ),
+                      ),
+                      child: const Row(
+                        children: [
+                          SizedBox(
+                            width: 90,
+                            child: Text(
+                              "Tag",
+                              style: TextStyle(fontWeight: FontWeight.bold),
+                            ),
+                          ),
+                          Expanded(
+                            child: Text(
+                              "Value",
+                              style: TextStyle(fontWeight: FontWeight.bold),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    //--------------------------------------------------
+                    // Rows
+                    //--------------------------------------------------
+                    ...parsedFields.map(
+                      (field) => Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 10,
+                        ),
+                        decoration: const BoxDecoration(
+                          border: Border(
+                            bottom: BorderSide(
+                              color: AppTheme.border,
+                              width: .5,
+                            ),
+                          ),
+                        ),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            SizedBox(
+                              width: 90,
+                              child: SelectableText(
+                                field.tag,
+                                style: const TextStyle(
+                                  color: Colors.orange,
+                                  fontWeight: FontWeight.bold,
+                                  fontFamily: "monospace",
+                                ),
+                              ),
+                            ),
+                            Expanded(
+                              child: SelectableText(
+                                field.value,
+                                style: const TextStyle(fontFamily: "monospace"),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ],
         ),
       ),
@@ -81,7 +179,8 @@ class CommandDetailsPanel extends StatelessWidget {
 
   Widget _chip(String title, String value) {
     return Container(
-      padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 20),
+      width: 90,
+      padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
       decoration: BoxDecoration(
         color: const Color(0xff111827),
         borderRadius: BorderRadius.circular(8),
@@ -94,7 +193,13 @@ class CommandDetailsPanel extends StatelessWidget {
             style: const TextStyle(color: AppTheme.subtitle, fontSize: 11),
           ),
           const SizedBox(height: 4),
-          Text(value, style: const TextStyle(fontWeight: FontWeight.bold)),
+          SelectableText(
+            value,
+            style: const TextStyle(
+              fontWeight: FontWeight.bold,
+              fontFamily: "monospace",
+            ),
+          ),
         ],
       ),
     );
@@ -108,36 +213,15 @@ class CommandDetailsPanel extends StatelessWidget {
     final buffer = StringBuffer();
 
     for (int i = 0; i < hex.length; i += 2) {
-      buffer.write(hex.substring(i, i + 2));
-      buffer.write(" ");
+      if (i + 2 <= hex.length) {
+        buffer.write(hex.substring(i, i + 2));
 
-      if (((i ~/ 2) + 1) % 8 == 0) {
-        buffer.write("\n");
+        if (i + 2 < hex.length) {
+          buffer.write(" ");
+        }
       }
     }
 
     return buffer.toString();
-  }
-
-  //---------------------------------------------------------
-
-  String _ascii(String hex) {
-    if (hex.isEmpty) return "-";
-
-    try {
-      final buffer = StringBuffer();
-
-      for (int i = 0; i < hex.length; i += 2) {
-        final c = int.parse(hex.substring(i, i + 2), radix: 16);
-
-        if (c >= 32 && c <= 126) {
-          buffer.write(String.fromCharCode(c));
-        }
-      }
-
-      return buffer.isEmpty ? hex : buffer.toString();
-    } catch (_) {
-      return hex;
-    }
   }
 }

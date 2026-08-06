@@ -47,7 +47,7 @@ class SelectedCommandHeader extends StatelessWidget {
                 Text(
                   log.commandName,
                   style: const TextStyle(
-                    fontSize: 20,
+                    fontSize: 16,
                     fontWeight: FontWeight.bold,
                     color: AppTheme.text,
                   ),

@@ -20,6 +20,72 @@ class BerTlvParser {
     return nodes;
   }
 
+  //----------------------------------------------------------
+  // Find first occurrence of a tag
+  //----------------------------------------------------------
+
+  static TlvNode? findTag(List<TlvNode> nodes, String tag) {
+    for (final node in nodes) {
+      if (node.tag.toUpperCase() == tag.toUpperCase()) {
+        return node;
+      }
+
+      final child = findTag(node.children, tag);
+
+      if (child != null) {
+        return child;
+      }
+    }
+
+    return null;
+  }
+
+  //----------------------------------------------------------
+  // Find all occurrences of a tag
+  //----------------------------------------------------------
+
+  static List<TlvNode> findTags(List<TlvNode> nodes, String tag) {
+    final result = <TlvNode>[];
+
+    void walk(List<TlvNode> list) {
+      for (final node in list) {
+        if (node.tag.toUpperCase() == tag.toUpperCase()) {
+          result.add(node);
+        }
+
+        walk(node.children);
+      }
+    }
+
+    walk(nodes);
+
+    return result;
+  }
+
+  //----------------------------------------------------------
+  // Flatten complete TLV tree
+  //----------------------------------------------------------
+
+  static List<TlvNode> flatten(List<TlvNode> nodes) {
+    final result = <TlvNode>[];
+
+    void walk(List<TlvNode> list) {
+      for (final node in list) {
+        result.add(node);
+
+        walk(node.children);
+      }
+    }
+
+    walk(nodes);
+
+    return result;
+  }
+
+  //----------------------------------------------------------
+  // Parse single TLV node
+  //----------------------------------------------------------
+
   static _ParseResult _parseNode(String hex, int start) {
     int index = start;
 
@@ -115,9 +181,9 @@ class BerTlvParser {
     );
   }
 
-  //------------------------------------
+  //----------------------------------------------------------
   // Constructed tag
-  //------------------------------------
+  //----------------------------------------------------------
 
   static bool _isConstructed(String tag) {
     int firstByte = int.parse(tag.substring(0, 2), radix: 16);
@@ -125,14 +191,23 @@ class BerTlvParser {
     return (firstByte & 0x20) == 0x20;
   }
 
-  //------------------------------------
+  //----------------------------------------------------------
   // EMV descriptions
-  //------------------------------------
+  //----------------------------------------------------------
 
   static String _description(String tag) {
     switch (tag) {
       case "6F":
         return "File Control Information";
+
+      case "70":
+        return "Record Template";
+
+      case "77":
+        return "Response Message Template Format 2";
+
+      case "80":
+        return "Response Message Template Format 1";
 
       case "84":
         return "Dedicated File Name";
@@ -156,7 +231,10 @@ class BerTlvParser {
         return "Track 2 Equivalent Data";
 
       case "5A":
-        return "PAN";
+        return "Application PAN";
+
+      case "5F20":
+        return "Cardholder Name";
 
       case "5F24":
         return "Application Expiry Date";
@@ -167,9 +245,6 @@ class BerTlvParser {
       case "5F2D":
         return "Language Preference";
 
-      case "5F20":
-        return "Cardholder Name";
-
       case "5F34":
         return "PAN Sequence Number";
 
@@ -177,19 +252,22 @@ class BerTlvParser {
         return "Application Interchange Profile";
 
       case "87":
-        return "Application Priority";
+        return "Application Priority Indicator";
 
       case "88":
         return "Short File Identifier";
 
+      case "8A":
+        return "Authorisation Response Code";
+
       case "8C":
-        return "CDOL1";
+        return "Card Risk Management Data Object List 1 (CDOL1)";
 
       case "8D":
-        return "CDOL2";
+        return "Card Risk Management Data Object List 2 (CDOL2)";
 
       case "8E":
-        return "Cardholder Verification Method";
+        return "Cardholder Verification Method List";
 
       case "94":
         return "Application File Locator";
@@ -212,8 +290,41 @@ class BerTlvParser {
       case "9F36":
         return "Application Transaction Counter";
 
+      case "9F37":
+        return "Unpredictable Number";
+
       case "9F38":
-        return "PDOL";
+        return "Processing Options Data Object List (PDOL)";
+
+      case "9F33":
+        return "Terminal Capabilities";
+
+      case "9F34":
+        return "Cardholder Verification Method Results";
+
+      case "9F35":
+        return "Terminal Type";
+
+      case "9F40":
+        return "Additional Terminal Capabilities";
+
+      case "9F02":
+        return "Amount Authorised";
+
+      case "9F03":
+        return "Amount Other";
+
+      case "9F1A":
+        return "Terminal Country Code";
+
+      case "9F1C":
+        return "Terminal Identification";
+
+      case "9F21":
+        return "Transaction Time";
+
+      case "9A":
+        return "Transaction Date";
 
       default:
         return "Unknown Tag";

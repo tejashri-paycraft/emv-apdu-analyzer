@@ -43,7 +43,7 @@ class AppHeader extends StatelessWidget {
               Text(
                 "EMV APDU Analyzer",
                 style: TextStyle(
-                  fontSize: 28,
+                  fontSize: 20,
                   fontWeight: FontWeight.bold,
                   color: AppTheme.text,
                 ),

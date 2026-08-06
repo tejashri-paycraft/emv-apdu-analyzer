@@ -18,40 +18,59 @@ class LeftPanel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: 300,
+      width: 320,
       decoration: const BoxDecoration(
         color: AppTheme.panel,
         border: Border(right: BorderSide(color: AppTheme.border)),
       ),
       child: Column(
         children: [
-          //------------------------------------------
+          //--------------------------------------------------
           // Header
-          //------------------------------------------
+          //--------------------------------------------------
           Container(
-            height: 60,
+            height: 64,
             padding: const EdgeInsets.symmetric(horizontal: 16),
             decoration: const BoxDecoration(
               border: Border(bottom: BorderSide(color: AppTheme.border)),
             ),
             child: Row(
               children: [
-                Text(
-                  "APDU Exchanges (${logs.length})",
-                  style: const TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: AppTheme.text,
+                Expanded(
+                  child: RichText(
+                    text: TextSpan(
+                      children: [
+                        const TextSpan(
+                          text: "APDU Exchanges",
+                          style: TextStyle(
+                            color: AppTheme.text,
+                            fontSize: 18,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                        TextSpan(
+                          text: " (${logs.length})",
+                          style: const TextStyle(
+                            color: AppTheme.subtitle,
+                            fontSize: 13,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
-                const Spacer(),
+                const Icon(
+                  Icons.filter_list_rounded,
+                  color: AppTheme.subtitle,
+                  size: 18,
+                ),
               ],
             ),
           ),
 
-          //------------------------------------------
-          // List
-          //------------------------------------------
+          //--------------------------------------------------
+          // APDU List
+          //--------------------------------------------------
           Expanded(
             child: logs.isEmpty
                 ? const Center(
@@ -61,107 +80,145 @@ class LeftPanel extends StatelessWidget {
                     ),
                   )
                 : ListView.builder(
-                    padding: const EdgeInsets.all(12),
+                    padding: const EdgeInsets.all(10),
                     itemCount: logs.length,
                     itemBuilder: (_, index) {
                       final log = logs[index];
+                      final selected = selectedIndex == index;
 
-                      final selected = index == selectedIndex;
-
-                      return GestureDetector(
-                        onTap: () => onSelected(index),
-                        child: AnimatedContainer(
-                          duration: const Duration(milliseconds: 250),
-                          margin: const EdgeInsets.only(bottom: 14),
-                          padding: const EdgeInsets.all(14),
-                          decoration: BoxDecoration(
-                            color: selected
-                                ? const Color(0xff263449)
-                                : AppTheme.background,
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(
-                              color: selected
-                                  ? AppTheme.primary
-                                  : AppTheme.border,
-                              width: selected ? 1.4 : 1,
-                            ),
-                          ),
-                          child: Column(
+                      return Padding(
+                        padding: const EdgeInsets.only(bottom: 10),
+                        child: InkWell(
+                          borderRadius: BorderRadius.circular(12),
+                          onTap: () => onSelected(index),
+                          child: Stack(
                             children: [
-                              //----------------------------------
-                              Row(
-                                children: [
-                                  CircleAvatar(
-                                    radius: 16,
-                                    backgroundColor: AppTheme.primary,
-                                    child: Text(
-                                      "${index + 1}",
-                                      style: const TextStyle(
-                                        color: Colors.white,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                  ),
-
-                                  const SizedBox(width: 12),
-
-                                  Expanded(
-                                    child: Text(
-                                      log.commandName,
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                      style: const TextStyle(
-                                        color: AppTheme.text,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                  ),
-
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 8,
-                                      vertical: 5,
-                                    ),
+                              if (selected)
+                                Positioned(
+                                  left: 0,
+                                  top: 8,
+                                  bottom: 8,
+                                  child: Container(
+                                    width: 3,
                                     decoration: BoxDecoration(
-                                      color: AppTheme.success.withOpacity(.15),
-                                      borderRadius: BorderRadius.circular(6),
+                                      color: Colors.white,
+                                      borderRadius: BorderRadius.circular(10),
                                     ),
-                                    child: Text(
-                                      log.statusWord,
-                                      style: const TextStyle(
-                                        color: AppTheme.success,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-
-                              const SizedBox(height: 14),
-
-                              Align(
-                                alignment: Alignment.centerLeft,
-                                child: Text(
-                                  _formatCommand(log.command),
-                                  maxLines: 2,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: const TextStyle(
-                                    color: AppTheme.subtitle,
-                                    fontSize: 12,
-                                    fontFamily: "monospace",
                                   ),
                                 ),
-                              ),
 
-                              const SizedBox(height: 10),
+                              Padding(
+                                padding: EdgeInsets.only(
+                                  left: selected ? 7 : 0,
+                                ),
+                                child: AnimatedContainer(
+                                  duration: const Duration(milliseconds: 250),
+                                  padding: const EdgeInsets.all(12),
+                                  decoration: BoxDecoration(
+                                    color: selected
+                                        ? const Color(0xff303851)
+                                        : Color(0xff0F172A),
+                                    borderRadius: BorderRadius.circular(12),
+                                    border: Border.all(
+                                      color: selected
+                                          ? Colors.white24
+                                          : Colors.transparent,
+                                    ),
+                                  ),
+                                  child: Row(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      //------------------------------------------------
+                                      // Number
+                                      //------------------------------------------------
+                                      Container(
+                                        width: 34,
+                                        height: 34,
+                                        decoration: BoxDecoration(
+                                          color: AppTheme.primary,
+                                          borderRadius: BorderRadius.circular(
+                                            17,
+                                          ),
+                                        ),
+                                        alignment: Alignment.center,
+                                        child: Text(
+                                          "${index + 1}",
+                                          style: const TextStyle(
+                                            color: Colors.white,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                      ),
 
-                              Align(
-                                alignment: Alignment.centerRight,
-                                child: Icon(
-                                  selected
-                                      ? Icons.keyboard_arrow_up
-                                      : Icons.keyboard_arrow_down,
-                                  color: AppTheme.subtitle,
+                                      const SizedBox(width: 12),
+
+                                      //------------------------------------------------
+                                      // Text
+                                      //------------------------------------------------
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              log.commandName.toUpperCase(),
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis,
+                                              style: const TextStyle(
+                                                color: AppTheme.text,
+                                                fontWeight: FontWeight.w600,
+                                                fontSize: 15,
+                                              ),
+                                            ),
+
+                                            const SizedBox(height: 8),
+
+                                            Text(
+                                              _formatCommand(log.command),
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis,
+                                              style: const TextStyle(
+                                                color: Color(0xff8F97AF),
+                                                fontSize: 12,
+                                                fontFamily: "monospace",
+                                                letterSpacing: .3,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+
+                                      const SizedBox(width: 10),
+
+                                      //------------------------------------------------
+                                      // Status
+                                      //------------------------------------------------
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 10,
+                                          vertical: 5,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          color: const Color(0xff14392F),
+                                          borderRadius: BorderRadius.circular(
+                                            6,
+                                          ),
+                                          border: Border.all(
+                                            color: const Color(0xff29D391),
+                                          ),
+                                        ),
+                                        child: Text(
+                                          log.statusWord,
+                                          style: const TextStyle(
+                                            color: Color(0xff56F0B0),
+                                            fontWeight: FontWeight.bold,
+                                            fontSize: 13,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
                                 ),
                               ),
                             ],
@@ -172,26 +229,29 @@ class LeftPanel extends StatelessWidget {
                   ),
           ),
 
-          //------------------------------------------
+          //--------------------------------------------------
           // Footer
-          //------------------------------------------
+          //--------------------------------------------------
           Container(
-            padding: const EdgeInsets.all(16),
+            height: 46,
+            padding: const EdgeInsets.symmetric(horizontal: 14),
             decoration: const BoxDecoration(
               border: Border(top: BorderSide(color: AppTheme.border)),
             ),
             child: Row(
               children: [
                 Text(
-                  "Total : ${logs.length}",
+                  "Total: ${logs.length}",
                   style: const TextStyle(color: AppTheme.subtitle),
                 ),
                 const Spacer(),
+                const Icon(Icons.check, color: AppTheme.success, size: 16),
+                const SizedBox(width: 4),
                 Text(
-                  "✓ ${logs.where((e) => e.statusWord == "9000").length}",
+                  "${logs.where((e) => e.statusWord == "9000").length}",
                   style: const TextStyle(
                     color: AppTheme.success,
-                    fontWeight: FontWeight.bold,
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
               ],
@@ -203,10 +263,10 @@ class LeftPanel extends StatelessWidget {
   }
 
   String _formatCommand(String command) {
-    if (command.length <= 34) {
+    if (command.length <= 18) {
       return command;
     }
 
-    return "${command.substring(0, 34)}...";
+    return "${command.substring(0, 18)}...";
   }
 }

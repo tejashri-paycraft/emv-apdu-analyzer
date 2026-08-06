@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:tlv_parser/services/emv_transaction_parse.dart'
+    show EmvTransactionParser;
 
 import 'models/apdu_log.dart';
 import 'models/tlv_node.dart';
@@ -22,17 +24,19 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   final TextEditingController controller = TextEditingController();
-
+  final EmvTransactionParser transactionParser = EmvTransactionParser();
   List<ApduLog> logs = [];
 
   int selectedIndex = 0;
 
   TlvNode? selectedTag;
 
-  //------------------------------------------------------------
+  //--------------------------------------------------------------
 
   void parseLogs() {
     final result = LogParser.parse(controller.text);
+
+    transactionParser.parse(result);
 
     setState(() {
       logs = result;
@@ -41,14 +45,14 @@ class _HomeScreenState extends State<HomeScreen> {
     });
   }
 
-  //------------------------------------------------------------
+  //--------------------------------------------------------------
 
   ApduLog? get selectedLog {
     if (logs.isEmpty) return null;
     return logs[selectedIndex];
   }
 
-  //------------------------------------------------------------
+  //--------------------------------------------------------------
 
   @override
   Widget build(BuildContext context) {
@@ -60,6 +64,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
           Expanded(
             child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 //--------------------------------------------------
                 // LEFT PANEL
@@ -76,21 +81,23 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
 
                 //--------------------------------------------------
-                // MAIN CONTENT
+                // CENTER PANEL
                 //--------------------------------------------------
                 Expanded(
                   child: Padding(
-                    padding: const EdgeInsets.all(16),
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
                     child: Column(
                       children: [
                         //--------------------------------------------------
-                        // INPUT PANEL
+                        // APDU INPUT
                         //--------------------------------------------------
                         LogInputPanel(
                           controller: controller,
                           onParse: parseLogs,
                           onClear: () {
                             controller.clear();
+
+                            transactionParser.parse([]);
 
                             setState(() {
                               logs.clear();
@@ -103,117 +110,70 @@ class _HomeScreenState extends State<HomeScreen> {
 
                         if (selectedLog != null)
                           Expanded(
-                            child: Row(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                //--------------------------------------------------
-                                // CENTER COLUMN
-                                //--------------------------------------------------
-                                Expanded(
-                                  flex: 3,
-                                  child: SingleChildScrollView(
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.stretch,
-                                      children: [
-                                        //--------------------------------------------------
-                                        // Selected Command Header
-                                        //--------------------------------------------------
-                                        SelectedCommandHeader(
-                                          log: selectedLog!,
-                                          index: selectedIndex,
-                                        ),
+                            child: SingleChildScrollView(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.stretch,
+                                children: [
+                                  //--------------------------------------------------
+                                  // SELECTED COMMAND HEADER
+                                  //--------------------------------------------------
+                                  SelectedCommandHeader(
+                                    log: selectedLog!,
+                                    index: selectedIndex,
+                                  ),
 
-                                        const SizedBox(height: 16),
+                                  const SizedBox(height: 16),
 
-                                        //--------------------------------------------------
-                                        // Command Details
-                                        //--------------------------------------------------
-                                        CommandDetailsPanel(log: selectedLog!),
-
-                                        const SizedBox(height: 16),
-
-                                        //--------------------------------------------------
-                                        // Raw Command
-                                        //--------------------------------------------------
-                                        // SizedBox(
-                                        //   height: 260,
-                                        //   child: RawCommandPanel(
-                                        //     log: selectedLog!,
-                                        //   ),
-                                        // ),
-
-                                        // const SizedBox(height: 16),
-
-                                        //--------------------------------------------------
-                                        // Raw Response
-                                        //--------------------------------------------------
-                                        // SizedBox(
-                                        //   height: 300,
-                                        //   child: RawResponsePanel(
-                                        //     log: selectedLog!,
-                                        //   ),
-                                        // ),
-                                        const SizedBox(height: 16),
-
-                                        //--------------------------------------------------
-                                        // TLV Tree
-                                        //--------------------------------------------------
-                                        SizedBox(
-                                          height: 500,
-                                          child: TlvTreePanel(
-                                            nodes: BerTlvParser.parse(
-                                              selectedLog!.responseData,
-                                            ),
-                                            onNodeSelected: (node) {
-                                              setState(() {
-                                                selectedTag = node;
-                                              });
-                                            },
-                                          ),
-                                        ),
-                                      ],
+                                  //--------------------------------------------------
+                                  // COMMAND DETAILS
+                                  //--------------------------------------------------
+                                  CommandDetailsPanel(
+                                    log: selectedLog!,
+                                    parsedFields: transactionParser.fieldsFor(
+                                      selectedIndex,
+                                    ),
+                                    parsedTitle: transactionParser.typeFor(
+                                      selectedIndex,
                                     ),
                                   ),
-                                ),
 
-                                const SizedBox(width: 16),
+                                  const SizedBox(height: 16),
 
-                                //--------------------------------------------------
-                                // RIGHT PANEL
-                                //--------------------------------------------------
-                                SizedBox(
-                                  width: 340,
-                                  child: Column(
-                                    children: [
-                                      //--------------------------------------------------
-                                      // Status
-                                      //--------------------------------------------------
-                                      // Expanded(
-                                      //   flex: 2,
-                                      //   child: StatusPanel(log: selectedLog!),
-                                      // ),
-                                      //
-                                      // const SizedBox(height: 16),
-
-                                      //--------------------------------------------------
-                                      // Tag Inspector
-                                      //--------------------------------------------------
-                                      Expanded(
-                                        flex: 5,
-                                        child: TagInspectorPanel(
-                                          node: selectedTag,
-                                        ),
+                                  //--------------------------------------------------
+                                  // TLV TREE
+                                  //--------------------------------------------------
+                                  SizedBox(
+                                    height: 500,
+                                    child: TlvTreePanel(
+                                      nodes: BerTlvParser.parse(
+                                        selectedLog!.responseData,
                                       ),
-                                    ],
+                                      onNodeSelected: (node) {
+                                        setState(() {
+                                          selectedTag = node;
+                                        });
+                                      },
+                                    ),
                                   ),
-                                ),
-                              ],
+                                ],
+                              ),
                             ),
                           ),
                       ],
                     ),
                   ),
+                ),
+
+                //--------------------------------------------------
+                // RIGHT PANEL
+                //--------------------------------------------------
+                Container(
+                  width: 340,
+                  decoration: const BoxDecoration(
+                    color: AppTheme.panel,
+                    border: Border(left: BorderSide(color: AppTheme.border)),
+                  ),
+                  child: TagInspectorPanel(node: selectedTag),
                 ),
               ],
             ),
